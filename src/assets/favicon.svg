@@ -1,0 +1,41 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background transparent -->
+
+  <!-- Safe padding -->
+  <g transform="translate(160,160) scale(0.68)">
+
+    <!-- Pot body -->
+    <rect x="192" y="420" width="512" height="280" rx="110" fill="#BF5B33"/>
+
+    <!-- Rim (strong contrast for small sizes) -->
+    <rect x="160" y="340" width="576" height="100" rx="50" fill="#2E1D17"/>
+
+    <!-- Lid -->
+    <ellipse cx="448" cy="300" rx="210" ry="85" fill="#BF5B33"/>
+
+    <!-- Lid knob -->
+    <circle cx="448" cy="205" r="48" fill="#2E1D17"/>
+
+    <!-- Handles (slightly larger for visibility) -->
+    <ellipse cx="110" cy="540" rx="70" ry="50" fill="#2E1D17"/>
+    <ellipse cx="786" cy="540" rx="70" ry="50" fill="#2E1D17"/>
+
+    <!-- Leaf (ultra-simplified for favicon clarity) -->
+    <path d="M340 520 
+             Q400 470 470 500 
+             Q410 580 340 560 
+             Q320 540 340 520 Z"
+          fill="#FFF4E5"/>
+
+    <!-- Steam (bold + iconic, readable at 16px) -->
+    <path d="M448 130 
+             C520 110 500 190 460 210 
+             C540 190 520 270 470 290"
+          fill="none"
+          stroke="#FFF4E5"
+          stroke-width="44"
+          stroke-linecap="round"/>
+
+  </g>
+</svg>
