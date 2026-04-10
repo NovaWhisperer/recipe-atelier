@@ -9,7 +9,7 @@ import App from './App.jsx'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RecipeContextProvider>
-      <BrowserRouter basename="/recipe-atelier/">
+      <BrowserRouter>
         <App />
         <ToastContainer />
       </BrowserRouter>
