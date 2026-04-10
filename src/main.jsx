@@ -6,10 +6,12 @@ import RecipeContextProvider from './context/RecipeContextProvider.jsx'
 import './index.css'
 import App from './App.jsx'
 
+const routerBasename = import.meta.env.BASE_URL
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RecipeContextProvider>
-      <BrowserRouter basename="/recipe-atelier/">
+      <BrowserRouter basename={routerBasename}>
         <App />
         <ToastContainer />
       </BrowserRouter>
