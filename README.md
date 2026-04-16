@@ -2,6 +2,8 @@
 
 > A modern, feature-rich recipe management application for culinary enthusiasts. Create, manage, search, and organize your favorite recipes with an intuitive interface and powerful search capabilities.
 
+**Live Demo:** [recipe-atelier.vercel.app](https://recipe-atelier.vercel.app)
+
 [![React](https://img.shields.io/badge/React-19.2.4-blue?logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-4.x-purple?logo=vite)](https://vitejs.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.2.2-06B6D4?logo=tailwindcss)](https://tailwindcss.com)
