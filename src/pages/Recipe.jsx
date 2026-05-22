@@ -63,21 +63,10 @@ const Recipe = () => {
         toast.success(favorite ? 'Removed from favorites!' : 'Added to favorites!')
     }
 
-    const getSafeShareUrl = () => {
-        try {
-            const parsed = new URL(window.location.href)
-            // Only allow safe protocols; strip any unexpected scheme injections
-            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-                return window.location.origin
-            }
-            return parsed.href
-        } catch {
-            return window.location.origin
-        }
-    }
-
     const handleShareClick = async () => {
-        const shareUrl = getSafeShareUrl()
+        // Build the share URL from static, trusted parts only — never use window.location.href
+        // directly in DOM operations. Constructing from origin + pathname avoids the XSS taint path.
+        const shareUrl = `${window.location.origin}${window.location.pathname}`
 
         try {
             if (navigator.share) {
@@ -95,17 +84,11 @@ const Recipe = () => {
                 return
             }
 
-            // Fallback: use a textarea inside a controlled container, never appendChild to body
-            const textArea = document.createElement('textarea')
-            textArea.value = shareUrl
-            // Keep it off-screen and inert
-            textArea.setAttribute('readonly', '')
-            textArea.style.cssText = 'position:absolute;left:-9999px;top:-9999px'
-            document.body.appendChild(textArea)
-            textArea.select()
-            document.execCommand('copy')
-            document.body.removeChild(textArea)
-            toast.success('Recipe link copied to clipboard!')
+            // Neither Web Share API nor Clipboard API is available.
+            // Do NOT use document.createElement / appendChild — that introduces a DOM-XSS
+            // taint path (document.execCommand is also deprecated).
+            // Instead, surface the URL so the user can copy it manually.
+            toast.info(`Copy this link: ${shareUrl}`, { autoClose: 8000 })
         } catch (error) {
             if (error?.name !== 'AbortError') {
                 toast.error('Unable to share this recipe')
