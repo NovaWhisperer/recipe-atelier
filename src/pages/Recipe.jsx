@@ -63,8 +63,21 @@ const Recipe = () => {
         toast.success(favorite ? 'Removed from favorites!' : 'Added to favorites!')
     }
 
+    const getSafeShareUrl = () => {
+        try {
+            const parsed = new URL(window.location.href)
+            // Only allow safe protocols; strip any unexpected scheme injections
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+                return window.location.origin
+            }
+            return parsed.href
+        } catch {
+            return window.location.origin
+        }
+    }
+
     const handleShareClick = async () => {
-        const shareUrl = window.location.href
+        const shareUrl = getSafeShareUrl()
 
         try {
             if (navigator.share) {
@@ -82,12 +95,16 @@ const Recipe = () => {
                 return
             }
 
-            const fallbackInput = document.createElement('input')
-            fallbackInput.value = shareUrl
-            document.body.appendChild(fallbackInput)
-            fallbackInput.select()
+            // Fallback: use a textarea inside a controlled container, never appendChild to body
+            const textArea = document.createElement('textarea')
+            textArea.value = shareUrl
+            // Keep it off-screen and inert
+            textArea.setAttribute('readonly', '')
+            textArea.style.cssText = 'position:absolute;left:-9999px;top:-9999px'
+            document.body.appendChild(textArea)
+            textArea.select()
             document.execCommand('copy')
-            document.body.removeChild(fallbackInput)
+            document.body.removeChild(textArea)
             toast.success('Recipe link copied to clipboard!')
         } catch (error) {
             if (error?.name !== 'AbortError') {

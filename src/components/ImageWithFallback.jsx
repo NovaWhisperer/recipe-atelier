@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FiImage } from 'react-icons/fi'
+import { RiImageAddFill } from 'react-icons/ri'
 import { IMAGE_CONFIG } from '../constants/appSettings'
 import { getOptimizedImageUrl, generateImageSrcSet } from '../utils/imageOptimization'
 
