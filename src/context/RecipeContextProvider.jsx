@@ -1,5 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import RecipeContextState from './RecipeContextState'
+import RecipesContext from './RecipesContext'
+import FavoritesContext from './FavoritesContext'
 import { safeStorageGet, safeStorageSet } from '../utils/storageManager'
 import { STORAGE_CONFIG, DEMO_RECIPES } from '../constants/appSettings'
 
@@ -18,27 +20,22 @@ const RecipeContextProvider = ({ children }) => {
   const [favorites, setFavorites] = useState(initializeFavorites)
   const [error, setError] = useState(null)
 
-  // Sync recipes to localStorage
+  // Sync to localStorage
   useEffect(() => {
     const success = safeStorageSet(STORAGE_CONFIG.recipes, recipes)
-    if (!success) {
-      console.error('Failed to save recipes to storage')
-    }
+    if (!success) console.error('Failed to save recipes to storage')
   }, [recipes])
 
-  // Sync favorites to localStorage
   useEffect(() => {
     const success = safeStorageSet(STORAGE_CONFIG.favorites, favorites)
-    if (!success) {
-      console.error('Failed to save favorites to storage')
-    }
+    if (!success) console.error('Failed to save favorites to storage')
   }, [favorites])
 
+  // ── Favorites operations (stable — only re-renders favorites consumers) ──
+
   const toggleFavorite = useCallback((recipeId) => {
-    setFavorites((prevFavorites) =>
-      prevFavorites.includes(recipeId)
-        ? prevFavorites.filter((id) => id !== recipeId)
-        : [...prevFavorites, recipeId]
+    setFavorites((prev) =>
+      prev.includes(recipeId) ? prev.filter((id) => id !== recipeId) : [...prev, recipeId]
     )
   }, [])
 
@@ -46,54 +43,67 @@ const RecipeContextProvider = ({ children }) => {
     return favorites.includes(recipeId)
   }, [favorites])
 
-  const getFavoriteRecipes = useCallback(() => {
-    return recipes.filter((recipe) => favorites.includes(recipe.id))
-  }, [recipes, favorites])
+  const getFavoriteRecipes = useCallback((recipeList) => {
+    return recipeList.filter((recipe) => favorites.includes(recipe.id))
+  }, [favorites])
+
+  // ── Recipe operations (stable — only re-renders recipe consumers) ────────
 
   const addRecipe = useCallback((newRecipe) => {
-    setRecipes(prev => [...prev, newRecipe])
+    setRecipes((prev) => [...prev, newRecipe])
   }, [])
 
   const updateRecipe = useCallback((recipeId, updatedData) => {
-    setRecipes(prev =>
-      prev.map(recipe =>
-        recipe.id === recipeId
-          ? { ...recipe, ...updatedData, id: recipe.id }
-          : recipe
+    setRecipes((prev) =>
+      prev.map((recipe) =>
+        recipe.id === recipeId ? { ...recipe, ...updatedData, id: recipe.id } : recipe
       )
     )
   }, [])
 
   const deleteRecipe = useCallback((recipeId) => {
-    setRecipes(prev => prev.filter(recipe => recipe.id !== recipeId))
-    // Remove from favorites if favorited
-    if (favorites.includes(recipeId)) {
-      setFavorites(prev => prev.filter(id => id !== recipeId))
-    }
-  }, [favorites])
-
-  const clearError = useCallback(() => {
-    setError(null)
+    setRecipes((prev) => prev.filter((recipe) => recipe.id !== recipeId))
+    setFavorites((prev) => prev.filter((id) => id !== recipeId))
   }, [])
 
-  const value = {
+  const clearError = useCallback(() => setError(null), [])
+
+  // ── Memoized context values — each only changes when its slice changes ───
+
+  const recipesValue = useMemo(() => ({
     recipes,
     setRecipes,
-    favorites,
-    toggleFavorite,
-    isFavorite,
-    getFavoriteRecipes,
     addRecipe,
     updateRecipe,
     deleteRecipe,
     error,
     clearError,
-  }
+  }), [recipes, addRecipe, updateRecipe, deleteRecipe, error, clearError])
+
+  const favoritesValue = useMemo(() => ({
+    favorites,
+    toggleFavorite,
+    isFavorite,
+    getFavoriteRecipes,
+  }), [favorites, toggleFavorite, isFavorite, getFavoriteRecipes])
+
+  // ── Legacy combined value (keeps old consumers working unchanged) ────────
+  const combinedValue = useMemo(() => ({
+    ...recipesValue,
+    ...favoritesValue,
+    // Convenience helper that doesn't need external recipeList arg
+    getFavoriteRecipes: () => recipes.filter((r) => favorites.includes(r.id)),
+  }), [recipesValue, favoritesValue, recipes, favorites])
 
   return (
-    <RecipeContextState.Provider value={value}>
-      {children}
-    </RecipeContextState.Provider>
+    <RecipesContext.Provider value={recipesValue}>
+      <FavoritesContext.Provider value={favoritesValue}>
+        {/* RecipeContextState is kept for backward-compat with all existing consumers */}
+        <RecipeContextState.Provider value={combinedValue}>
+          {children}
+        </RecipeContextState.Provider>
+      </FavoritesContext.Provider>
+    </RecipesContext.Provider>
   )
 }
 
