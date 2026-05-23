@@ -1,18 +1,19 @@
-import { memo, useState, useMemo, useCallback, useContext } from 'react'
+import { memo, useState, useMemo, useCallback, useContext, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { RiSearchLine } from 'react-icons/ri'
+import { RiSearchLine, RiDownload2Line, RiUpload2Line } from 'react-icons/ri'
 import RecipeCard from '../components/RecipeCard'
 import SearchAndFilterBar from '../components/SearchAndFilterBar'
 import PaginationControls from '../components/PaginationControls'
 import EmptyState from '../components/EmptyState'
 import ErrorBoundary from '../components/ErrorBoundary'
 import RecipeContextState from '../context/RecipeContextState'
-import { searchRecipes, filterRecipesByCategory, sortRecipes } from '../utils/recipeOperations'
+import { searchRecipes, filterRecipesByCategory, sortRecipes, exportRecipesToJSON, importRecipesFromJSON } from '../utils/recipeOperations'
 import { PAGINATION_CONFIG } from '../constants/appSettings'
 
 const RecipesList = () => {
-  const { recipes, toggleFavorite, isFavorite } = useContext(RecipeContextState)
+  const { recipes, setRecipes, toggleFavorite, isFavorite } = useContext(RecipeContextState)
+  const importFileRef = useRef(null)
   
   // Search, filter, sort state
   const [searchTerm, setSearchTerm] = useState('')
@@ -92,20 +93,83 @@ const RecipesList = () => {
     toast.success(isFav ? 'Removed from favorites!' : 'Added to favorites!')
   }
 
+  const handleExportAll = () => {
+    if (recipes.length === 0) { toast.error('No recipes to export'); return }
+    exportRecipesToJSON(recipes)
+    toast.success(`Exported ${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} as JSON`)
+  }
+
+  const handleImportClick = () => importFileRef.current?.click()
+
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const imported = importRecipesFromJSON(event.target.result)
+        // Merge: skip recipes whose id already exists
+        const existingIds = new Set(recipes.map(r => r.id))
+        const newRecipes = imported.filter(r => !existingIds.has(r.id))
+        if (newRecipes.length === 0) {
+          toast.info('All recipes in this file already exist in your collection.')
+        } else {
+          setRecipes(prev => [...prev, ...newRecipes])
+          toast.success(`Imported ${newRecipes.length} new recipe${newRecipes.length !== 1 ? 's' : ''}!`)
+        }
+      } catch (err) {
+        toast.error(`Import failed: ${err.message}`)
+      } finally {
+        // Reset input so the same file can be re-selected
+        e.target.value = ''
+      }
+    }
+    reader.readAsText(file)
+  }
+
   return (
     <ErrorBoundary>
       <section className='flex flex-col gap-5'>
         {/* Header */}
         <div className='rounded-3xl border border-[rgba(97,60,44,0.2)] bg-[rgba(255,250,243,0.86)] p-5 backdrop-blur-[2px]'>
-          <p className='text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[#8d4a2f]'>
-            Recipe Library
-          </p>
-          <h1 className="mt-2 font-['Fraunces'] text-[clamp(1.25rem,3.2vw,1.8rem)]">
-            Explore every dish in your collection
-          </h1>
-          <p className='mt-2 text-[#73544a]'>
-            {paginationData.totalItems} recipe(s) found. Search, filter, and discover your favorite dishes.
-          </p>
+          <div className='flex flex-wrap items-start justify-between gap-3'>
+            <div>
+              <p className='text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[#8d4a2f]'>
+                Recipe Library
+              </p>
+              <h1 className="mt-2 font-['Fraunces'] text-[clamp(1.25rem,3.2vw,1.8rem)]">
+                Explore every dish in your collection
+              </h1>
+              <p className='mt-2 text-[#73544a]'>
+                {paginationData.totalItems} recipe(s) found. Search, filter, and discover your favorite dishes.
+              </p>
+            </div>
+            <div className='flex flex-wrap gap-2 shrink-0'>
+              {/* Hidden file input for import */}
+              <input
+                ref={importFileRef}
+                type='file'
+                accept='.json,application/json'
+                className='hidden'
+                onChange={handleImportFile}
+                aria-label='Import recipes JSON file'
+              />
+              <button
+                onClick={handleImportClick}
+                className='rounded-xl border border-[rgba(191,91,51,0.35)] px-4 py-2 text-sm font-bold text-[#bf5b33] transition hover:bg-[rgba(191,91,51,0.08)] flex items-center gap-2'
+                aria-label='Import recipes from JSON'
+              >
+                <RiUpload2Line size={16} /> Import
+              </button>
+              <button
+                onClick={handleExportAll}
+                className='rounded-xl border border-[rgba(191,91,51,0.35)] px-4 py-2 text-sm font-bold text-[#bf5b33] transition hover:bg-[rgba(191,91,51,0.08)] flex items-center gap-2'
+                aria-label='Export all recipes as JSON'
+              >
+                <RiDownload2Line size={16} /> Export All
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Search & Filter */}
@@ -135,6 +199,7 @@ const RecipesList = () => {
                 currentPage={paginationData.currentPage}
                 totalPages={paginationData.totalPages}
                 totalItems={paginationData.totalItems}
+                itemsPerPage={paginationData.itemsPerPage}
                 onPageChange={goToPage}
               />
             )}

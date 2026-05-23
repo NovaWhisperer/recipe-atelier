@@ -7,9 +7,9 @@ import { RiCheckFill, RiRefreshLine } from 'react-icons/ri'
 import FormField from '../components/FormField'
 import ErrorBoundary from '../components/ErrorBoundary'
 import RecipeContextState from '../context/RecipeContextState'
-import { RECIPE_CATEGORIES } from '../constants/appSettings'
+import { RECIPE_CATEGORIES, DIFFICULTY_OPTIONS } from '../constants/appSettings'
 import { VALIDATION_RULES } from '../utils/validationRules'
-import { normalizeRecipeInstructionInput, normalizeRecipeListInput } from '../utils/formatters'
+import { normalizeRecipeInstructionInput, normalizeRecipeListInput, sanitizeRecipe } from '../utils/formatters'
 
 const Create = () => {
     const { addRecipe } = useContext(RecipeContextState)
@@ -23,15 +23,15 @@ const Create = () => {
 
     const submitHandler = async (formData) => {
         try {
-            const newRecipe = {
+            const newRecipe = sanitizeRecipe({
                 ...formData,
                 id: nanoid(),
                 recipePricing: Number(formData.recipePricing),
                 servings: Number(formData.servings) || 4,
                 recipeIngredients: normalizeRecipeListInput(formData.recipeIngredients),
                 recipeInstructions: normalizeRecipeInstructionInput(formData.recipeInstructions),
-            }
-            
+            })
+
             addRecipe(newRecipe)
             toast.success('Recipe created successfully!')
             reset()
@@ -87,6 +87,13 @@ const Create = () => {
                                 required
                                 options={RECIPE_CATEGORIES.map(cat => ({ value: cat.value, label: cat.label }))}
                                 {...register('recipeCategory', VALIDATION_RULES.recipeCategory)}
+                            />
+
+                            <FormField
+                                label='Difficulty'
+                                type='select'
+                                options={DIFFICULTY_OPTIONS}
+                                {...register('difficulty')}
                             />
 
                             <FormField
