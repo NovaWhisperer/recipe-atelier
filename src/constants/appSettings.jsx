@@ -18,6 +18,13 @@ export const THEME_COLORS = {
   },
 }
 
+// Difficulty Options
+export const DIFFICULTY_OPTIONS = [
+  { value: 'easy', label: 'Easy' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'hard', label: 'Hard' },
+]
+
 // Recipe Categories
 export const RECIPE_CATEGORIES = [
   { value: 'breakfast', label: 'Breakfast', icon: 'RiRestaurant2Fill' },
